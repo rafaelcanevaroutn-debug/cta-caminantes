@@ -65,7 +65,7 @@ Generá exactamente ${cantidad} variante${cantidad > 1 ? "s" : ""}, separadas co
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash-lite",
       contents: prompt,
       config: {
         maxOutputTokens: 2000,
@@ -83,8 +83,14 @@ Generá exactamente ${cantidad} variante${cantidad > 1 ? "s" : ""}, separadas co
       .filter((v: string) => v.length > 0);
 
     return Response.json({ variantes });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error llamando a Gemini:", error);
-    return Response.json({ error: "Error al generar los CTAs. Verificá tu API key." }, { status: 500 });
+
+    // Extraer el mensaje real de error de Gemini para mostrarlo en pantalla
+    const errorMessage = error?.status === 503
+      ? "Los servidores de Gemini están sobrecargados en este momento. Por favor, intentá de nuevo en unos segundos."
+      : error?.message || "Error al generar los CTAs. Verificá tu API key.";
+
+    return Response.json({ error: errorMessage }, { status: 500 });
   }
 }
