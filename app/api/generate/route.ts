@@ -1,7 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
 export async function POST(request: Request) {
@@ -64,25 +64,27 @@ La llamada a la acción con el mecanismo indicado (${formatoTexto[formato]}). Cl
 Generá exactamente ${cantidad} variante${cantidad > 1 ? "s" : ""}, separadas con "---" entre cada una. No incluyas numeración ni títulos externos, solo el contenido del CTA.`;
 
   try {
-    const message = await client.messages.create({
-      model: "claude-opus-4-6",
-      max_tokens: 2000,
-      messages: [{ role: "user", content: prompt }],
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        maxOutputTokens: 2000,
+      }
     });
 
-    const content = message.content[0];
-    if (content.type !== "text") {
+    const text = response.text;
+    if (!text) {
       return Response.json({ error: "Respuesta inválida de la IA" }, { status: 500 });
     }
 
-    const variantes = content.text
+    const variantes = text
       .split("---")
       .map((v: string) => v.trim())
       .filter((v: string) => v.length > 0);
 
     return Response.json({ variantes });
   } catch (error) {
-    console.error("Error llamando a Anthropic:", error);
+    console.error("Error llamando a Gemini:", error);
     return Response.json({ error: "Error al generar los CTAs. Verificá tu API key." }, { status: 500 });
   }
 }
